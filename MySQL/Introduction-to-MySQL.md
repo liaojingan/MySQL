@@ -37,12 +37,12 @@
 ## 六、安装mysql
 * 注意勾选这个加密机制，防止后面python一些旧的包不兼容
 
-![mysql安装](E:\Test\Rep\MySQL\img\mysql-install01.png)
+![mysql安装](E:/Test/Rep/MySQL/img/mysql-install01.png)
 
 ## 七、用户管理
 1. Navicat创建连接后自动生成四个逻辑空间，本质是文件夹，不可修改
 
-![navicat安装](E:\Test\Rep\MySQL\img\mysql-navicat01.png)
+![navicat安装](r'E:\Test\Rep\MySQL\img\mysql-navicat01.png')
 
 2. 创建用户
 
