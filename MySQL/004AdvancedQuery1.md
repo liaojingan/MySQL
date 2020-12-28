@@ -158,7 +158,7 @@ GROUP BY 1 HAVING deptno IN (10,20);
 # 不建议这样书写，可以先在WHERE子句中写入普通条件筛选一部分数据，这样速度较快
 ```
 
-## 四、表连接查询（1）
+## 四、表连接查询
     1、从多张表中提取数据
     必须制定关联条件，如果不定义关联条件就会出现无条件连接，两张表的数据会交叉连接，产生笛卡尔积（就是所有数据叠加在一起）
 
@@ -193,6 +193,8 @@ JOIN t_salgrade s ON e.sal BETWEEN s.losal AND s.hisal;
 
     总结：内连接是数据表不一定必须有同名字段，只要字段之间符合逻辑关系即可
 
+### 表的内连接练习
+
 ```sql
 # 查询与SCOTT相同部门的员工都有谁
 # 方法一使用子查询：用SCOTT部门作为第二次查询的条件，使用子查询速度比较慢
@@ -207,4 +209,133 @@ SELECT e2.ename
 FROM t_emp e1 JOIN t_emp e2 ON e1.deptno=e2.deptno
 WHERE e1.ename='SCOTT' AND e2.ename!='SCOTT';
 ```
-    总结：相同数据表也可以做表连接
+    总结：相同数据表也可以做表连接;因为内连接中ON子句相当于WHERE子句，所以也不可以使用聚合函数
+  
+  
+```sql
+# 查询底薪超过公司平均底薪的员工信息
+# ON和WHERE子句一样，所以后面也不可以使用聚合函数，下面是错误的写法
+SELECT e2.empno,e2.ename,e2.sal
+FROM t_emp e1 JOIN t_emp e2 ON e2.sal>=AVG(e1.sal);
+
+# 将查询的公司平均底薪结果集作为一张表和emp表连接，不是使用子查询
+# 当然也可以使用子查询方法解答，但查询速度较慢
+SELECT e.empno,e.ename,e.sal
+FROM t_emp e JOIN (SELECT AVG(sal) avg FROM t_emp) t 
+ON e.sal>=t.avg;
+
+
+# 查询RESEARCH部门的人数、最高底薪、最低底薪、平均底薪、平均工龄
+# FLOOR()函数：只保留整数，截取掉小数（场景：年龄）
+# CELL()函数：强制进位（场景：快递邮费）
+SELECT COUNT(*),MAX(e.sal),MIN(e.sal),AVG(e.sal),FLOOR(AVG(DATEDIFF(NOW(),hiredate)/365))
+FROM t_emp e JOIN t_dept d ON e.deptno=d.deptno
+WHERE d.dname='RESEARCH';
+
+
+# 查询每种职业的最高工资、最低工资、平均工资、最高工资等级和最低工资等级
+SELECT 
+MAX(e.sal+IFNULL(comm,0)),
+MIN(e.sal+IFNULL(comm,0)),
+AVG(e.sal+IFNULL(comm,0)),
+MAX(s.grade),
+MIN(s.grade)
+FROM t_emp e JOIN t_salgrade s ON e.sal+IFNULL(comm,0) BETWEEN s.losal AND s.hisal 
+GROUP BY e.job;
+
+
+# 查询每个底薪超过部门平均底薪的员工信息
+SELECT e.ename,e.deptno,e.sal
+FROM t_emp e JOIN (SELECT deptno,AVG(sal) avg FROM t_emp GROUP BY deptno) t
+ON e.deptno=t.deptno AND e.sal>t.avg;
+```
+
+    4、表的外连接
+        使用外连接的原因：如果一名临时员工没有固定的部门编制信息，那么查询每名员工和部门信息时
+        用内连接就会遗漏，只有引入外连接才可解决
+        LEFT JOIN表示保留左表完整的数据和右表进行连接，如果左表有字段值无法和右表匹配则显示Null
+        RIGHT JOIN同理，只是顺序调换
+        
+```sql
+# LEFT JOIN表示保留左表完整的数据和右表进行连接
+SELECT e.ename,d.dname,e.deptno
+FROM t_emp e LEFT JOIN t_dept d ON e.deptno=d.deptno;
+```
+
+![mysql左连接](./img/mysql左连接01.png)
+
+```sql
+# 查询每个部门的名称和部门人数（前提：40部门没有员工）
+# 下面的语句统计出40部门COUNT数量是1，因为COUNT是统计有效数量，40部门是存在的，只是某个字段为null而已
+SELECT d.dname,COUNT(*)
+FROM t_dept d LEFT JOIN t_emp e ON d.deptno=e.deptno
+GROUP BY d.deptno;
+
+# 将右表的null去除即可
+SELECT d.dname,COUNT(e.deptno)
+FROM t_dept d LEFT JOIN t_emp e ON d.deptno=e.deptno
+GROUP BY d.deptno;
+```
+
+    UNION关键字可以将多个查询语句的结果集进行合并，前提字段数量相同
+    （查询语句）UNION（查询语句）UNION（查询语句）.....
+    
+```sql
+# 查询每个部门的名称和部门的人数，如果没有部门的员工，部门名称用NULL代替
+# 下面为错误写法
+SELECT d.dname,COUNT(e.deptno)
+FROM t_dept d RIGHT JOIN t_emp e ON d.deptno=e.deptno
+GROUP BY d.deptno;
+
+# 正确写法
+(SELECT d.dname,COUNT(e.deptno)
+FROM t_dept d LEFT JOIN t_emp e ON d.deptno=e.deptno
+GROUP BY d.deptno)UNION
+(SELECT d.dname,COUNT(*)
+FROM t_dept d RIGHT JOIN t_emp e ON d.deptno=e.deptno
+GROUP BY d.deptno);
+
+
+# 查询每名员工的编号、姓名、部门名称、月薪、工资等级、工龄、上司编号、上司姓名、上司部门
+# 要保留前两张左连接得出的结果集，所以第三张表也用左连接
+SELECT 
+	e.empno,e.ename,
+	d.dname,e.sal+IFNULL(comm,0),
+	s.grade,FLOOR(DATEDIFF(NOW(),
+	e.hiredate)/365),
+	t.empno AS mgrno,t.ename AS mname,t.dname AS mdname
+FROM t_emp e LEFT JOIN t_dept d ON e.deptno=d.deptno
+LEFT JOIN t_salgrade s ON e.sal BETWEEN s.losal AND s.hisal
+LEFT JOIN
+(SELECT e1.empno,e1.ename,d1.dname
+FROM t_emp e1 JOIN t_dept d1
+ON e1.deptno=d1.deptno) t
+ON e.mgr=t.empno;
+```
+    注意：内连接中ON子句和WHERE是等同的；但在外连接中，条件写在WHERE子句中，不符合条件
+    的数据是会被过滤的，而不会保留下来
+    
+```sql
+# 写在WHERE子句，不符合条件过滤
+SELECT
+	e.deptno,e.ename,d.dname
+FROM t_emp e LEFT JOIN t_dept d
+ON e.deptno=d.deptno
+WHERE e.deptno='10';
+```
+
+![左连接](./img/左连接01.png)
+
+```sql
+# 写在ON子句，不符合条件的没有过滤
+SELECT
+	e.deptno,e.ename,d.dname
+FROM t_emp e LEFT JOIN t_dept d
+ON e.deptno=d.deptno
+AND e.deptno='10';
+```
+
+![左连接](./img/mysql左连接02.png)
+
+## 子查询
+    where子句中的子查询是不推荐使用的
