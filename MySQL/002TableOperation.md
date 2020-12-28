@@ -28,13 +28,14 @@
         mysql> SHOW DATABASES;  # 查看逻辑空间
         mysql> DROP DATABASE 逻辑库名称;  # 删除逻辑空间
 
-##六、创建数据表DDL语句
+## 六、创建数据表DDL语句
         CREATE TABLE 数据表 (
         列名1 数据类型 [约束] [COMMENT 注释],
         列名2 数据类型 [约束] [COMMENT 注释],
         ......
         )  [COMMENT 注释];
-
+        
+```sql
         CREATE TABLE student (
         id INT UNSIGNED PRIMARY KEY,
         name VARCHAR(20) NOT NULL,
@@ -43,6 +44,7 @@
         tel CHAR(11) NOT NULL,
         remark VARCHAR(200)
         );
+```
         UNSIGNED表示无符号整数，即不可以是负数
         PRIMARY KEY 约束值不能重复
         NOT NULL 不允许为空
@@ -126,6 +128,7 @@
     第一范式（原子性）：
         数据库基本要求，不满足这一点就不是关系型数据库
         数据表的每一列都是不可分割的基本数据项，同一列中不能有多个值，也不能存在重复 的属性，举例如下的班级“高三年级1班”还可以拆分为年级和班级所以不满足
+        
         不符合第一范式：
         
 |学号|姓名|班级|
@@ -133,6 +136,7 @@
 |1000|刘娜|高三年级1班|
 
         符合第一范式：
+        
 |学号|姓名|年级|班级|
 |---|---|---|---|
 |1000|刘娜|高三|1班|
@@ -158,7 +162,7 @@
         以下示例中女儿的玩具依赖于女儿，并不依赖于主键爸爸
         
 |爸爸|儿子|女儿|女儿的玩具|女儿的衣服|
-|------|---|--------|--------|
+|---|---|---|--------|--------|
 |陈华|陈浩|陈婷婷|海绵宝宝|校服|
         
         上面的表格拆分成两张表才符合第三范式
@@ -210,7 +214,9 @@
     );
     
     外键约束的定义是写在子表上的
-    下面是定义的员工子表，其中ENUM表示枚举，只能在规定的值中挑选的意思
+   
+```sql
+    # 下面是定义的员工子表，其中ENUM表示枚举，只能在规定的值中挑选的意思
     CREATE TABLE t_emp(
         empno INT UNSIGED PRIMARY KEY,
         ename VARCHAR(20) NOT NULL,
@@ -220,12 +226,13 @@
         FOREIGN KEY (deptno) REFERENCES t_dept(deptno)
     );
     
-    下面定义的是部门主表
+    # 下面定义的是部门主表
     CREATE TABLE t_dept(
         deptno INT UNSIGNED PRIMARY KEY,
         danme VARCHAR(20) NOT NULL UNIQUE,
         tel CHAR(11) UNIQUE
     );
+```
     
     不建议使用外键约束语法：
     外键约束闭环问题：如果形成外键闭环，我们将无法删除任何一张表的记录
