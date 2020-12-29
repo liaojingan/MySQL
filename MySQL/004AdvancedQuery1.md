@@ -337,5 +337,48 @@ AND e.deptno='10';
 
 ![左连接](./img/mysql左连接02.png)
 
-## 子查询
-    where子句中的子查询是不推荐使用的
+## 五、子查询
+
+    1、where子句中的子查询是不推荐使用的，只推荐在FROM子句中使用子查询
+    子查询是查询语句中嵌套查询的语句
+
+```sql
+# 查询底薪超过公司平均底薪的员工的信息
+SELECT e.deptno,e.ename,e.sal
+FROM t_emp e JOIN (SELECT AVG(sal) avg FROM t_emp) t
+ON e.sal>t.avg;
+
+# 子查询方法得出的结果也是可以的，只是不推荐在WHERE子句中使用
+SELECT deptno,ename,sal
+FROM t_emp
+WHERE sal>(SELECT AVG(sal) FROM t_emp);
+```
+    2、子查询语句可以写在WHERE子句、SELECT子句、FROM子句中个，只在FROM子句中使用是最可取的
+       因为FROM中的子查询只会执行一次，所以查询效率很快；而WHERE和SELECT子句(相关子查询)每筛选一条数据就要执行一次
+       
+```sql
+# 查询底薪超过公司平均底薪的员工的信息
+SELECT e.deptno,e.empno,e.ename,e.sal,t.avg
+FROM t_emp e JOIN (SELECT deptno,AVG(sal) avg FROM t_emp GROUP BY deptno) t
+ON e.deptno=t.deptno AND e.sal>t.avg;   
+```
+
+## 六、单行和多行子查询
+    
+    1、单行子查询的结果集只有一条记录，多行子查询的结果集有多行记录
+    2、多行子查询只能出现在WHERE子句和FROM子句中
+    
+```sql
+# 如何用子查询查找FORD和MARTIN两个人的同事
+# 因为子查询查到FROD和MARTIN两个人在不同部门返回两条数据，所以需要使用IN
+SELECT ename
+FROM t_emp
+WHERE deptno IN
+(SELECT deptno FROM t_emp WHERE ename IN('FORD','MARTIN'))
+AND ename NOT IN('FORD','MARTIN');
+```
+
+    3、WHERE子句可以使用IN、ALL、ANY、EXISTS关键字来处理多行表达式结果集的条件判断
+    
+    
+    
