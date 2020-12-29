@@ -380,5 +380,30 @@ AND ename NOT IN('FORD','MARTIN');
 
     3、WHERE子句可以使用IN、ALL、ANY、EXISTS关键字来处理多行表达式结果集的条件判断
     
-    
+```sql
+# ALL表示sal大于这个结果集的所有数据，ANY表示大于结果集中，其余一个即可
+SELECT ename
+FROM t_emp
+WHERE sal >= ALL
+(SELECT sal t_emp FROM t_emp WHERE ename IN('FORD','MARTIN'))
+AND ename NOT IN('FORD','MARTIN');
+```
+
+```sql
+# 查询工资等级是3级或4级的员工信息
+# 内连接查询
+SELECT e.ename,e.sal,s.grade
+FROM t_emp e JOIN t_salgrade s
+ON e.sal BETWEEN s.losal AND s.hisal AND grade IN(3,4);
+
+# EXISTS用法，查询效率低
+SELECT empno,ename,sal
+FROM t_emp
+WHERE EXISTS(
+SELECT * FROM t_salgrade
+WHERE sal BETWEEN losal AND hisal
+AND grade IN(3,4));
+```
+
+
     
