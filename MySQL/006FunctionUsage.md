@@ -70,10 +70,27 @@ SELECT ename,DATE_FORMAT(hiredate,'%Y') AS year FROM t_emp;
 ```sql
 # 利用日期函数，查询明年你的生日是星期几
 SELECT DATE_FORMAT('2021-01-04','%W');
+
+# 利用日期函数，查询1981年上半年入职员工有多少人
+SELECT COUNT(*)
+FROM t_emp
+WHERE DATE_FORMAT(hiredate,'%Y')='1981'
+AND DATE_FORMAT(hiredate,'%m')<=6;
 ```
 
+    5、日期计算的注意事项
+        MySQL数据库里面，两个日期不能直接加减，日期也不能与数字加减，语法不会报错但计算是错误的
+        
+    6、日期偏移计算函数
+        DATE_ADD()可实现日前向前或向后偏移的计算，时间单位灵活
+        语法格式：DATE_ADD(日期, INTERVAL 偏移量 时间单位)——》注意INTERVAL后参数没有逗号分隔的
+        
 
-
+```sql
+SELECT DATE_ADD(NOW(),INTERVAL 30 DAY);
+# 计算6个月零3天前日期，使用嵌套
+SELECT DATE_ADD(DATE_ADD(NOW(),INTERVAL -6 MONTH), INTERVAL -3 DAY);
+```
 
 
 
