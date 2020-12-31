@@ -92,7 +92,22 @@ SELECT DATE_ADD(NOW(),INTERVAL 30 DAY);
 SELECT DATE_ADD(DATE_ADD(NOW(),INTERVAL -6 MONTH), INTERVAL -3 DAY);
 ```
 
+    7、计算日期之间相隔的天数
+        DATEDIFF()函数计算两个日期之间相差的天数
+        DATEDIFF(日期,日期)
 
+## 字符函数
+    1、STIR(test,'A')是用来判断A字符串是否出现在test这个字段中
 
+|函数|功能|用例|
+|---|---|---|
+|LOWER|转换小写字符|LOWER(NAME)|
+|UPPER|转换大写字符|UPPER(name)|
+|LENGTH|字符数量|LENGTH(test)|
+|CONCAT|连接字符串|CONCAT(sal,'$')|
+|INSTR|字符出现的位置|STIR(test,'A')|
+|INSERT|插入/替换字符|INSERT('你好',1,0,'先生')|
+|REPLACE|替换字符|REPLACE('你好先生','先生','女士')|
 
+    
 
