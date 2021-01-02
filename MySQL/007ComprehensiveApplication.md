@@ -237,18 +237,134 @@ COMMIT;
 ## 新闻管理系统 数据库设计
 
     新闻管理系统控制台程序
-    输入用户名：admin
-    密码：******
+        输入用户名：admin
+        密码：******
     
     选择你要执行的操作：
-    1. 新闻列表
-    2. 新建新闻
-    3. 编辑新闻
-    4. 退出
+        1. 新闻列表
+        2. 新建新闻
+        3. 编辑新闻
+        4. 退出
     
+### 建表就要考虑字段的可扩展性，需不需要重新建新表引入
+
     新闻属性
-    新闻表：编号、标题、作者、类型、内容、置顶、创建时间、修改时间、状态
-    用户表：编号、用户（由新闻表中作者衍生出这张表，作者字段引用用户表的Id即可）
+        新闻表：编号、标题、作者、类型、内容、置顶、创建时间、修改时间、状态
+        用户表：编号、用户（由新闻表中作者衍生出这张表，作者字段引用用户表的Id即可）
+        类型表：编号、类型 
+        类型字段需要做成可扩展的，不能用枚举固定几种类型，如果后面需要添加新类型就需要使用ALTER TABLE修改表结构，
+        如果数据量多这个执行速度就慢，因为修改表结构是要锁表的，锁上了既不能写入也不能读取直到ATLER TABLE执行结束
+        例如淘宝这个量级的数据库，修改表结构的耗时是非常久的，因此淘宝的数据库在设计的时候，要么提前考虑后面的扩展，
+        要么就是重新构建一套数据库系统，新旧数据库是并行运行的，业务模块一个一个迁移到新的数据库平台
+        
+        内容表：编号、内容
+        因为mysql中不太适合保存超长内容的文字，读写速度非常慢，可以把新闻内容保存到MongoDB的数据库里，创建内容表
+        MongoDB适合保存海量低价值数据，读写速度较快
+        
+## 创建逻辑库和数据表
+    数据库ER图
+        注意：password:varchar(500) 字段长度设置为500是因为密码后期需要做加密处理
+        CSDM网站曾明文保存大量数据，导致被拖库操作泄露了大量数据
+        
+   ![ER图](./img/mysql的ER图.png)
+   
+    注意：创建的数据表需不需要加索引主要是看数据量
     
+```sql
+# 创建vega逻辑库
+CREATE DATABASE vega;
+# 切换逻辑库
+USE vega;
+
+# 创建类型表
+CREATE TABLE t_type(
+	id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+	type VARCHAR(20) NOT NULL UNIQUE
+);
+
+# 插入数据
+INSERT INTO t_type(type) VALUE('要闻'),('体育'),('科技'),('历史'),('娱乐');   
+
+# 创建角色表
+CREATE TABLE t_role(
+	id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+	role VARCHAR(20) NOT NULL UNIQUE
+);
+
+# 普通用户不需要登录就可以查看新闻，所以不用加入角色表
+INSERT INTO t_role(role) VALUES('管理员'),('新闻编辑');
+```
+  
+## 数据加密
+    数据加密分为：对称加密和非对称加密
+    对称加密分为：DES加密和AES加密
+    非对称加密分为：RSA加密、DSA加密和ECC加密
     
+    对称加密：指的是加密和解密用到的秘钥是相同的，这种方式加密很快但是强度很低，主要用在文件加密
+    非对称加密：分为公钥和私钥都可以用来加密和解密，比如用公钥加密就要用私钥解密，用私钥加密就用公钥解密
+    这种加密强度很高但是加密速度慢，网络通信传输的数据量不算大，但信息保密的安全程度高，主要用在互联网和电信领域
+    数据加密的底层数学实现是信息安全专业需要特别学习的
     
+    DES加密算法24小时即可破解
+    AES加密函数：MySQL数据库提供了AES加密和解的函数，所以数据的加密解密非常容易实现
+    语法格式：AES_ENCRYPT(原始数据,密钥字符串)
+    注意：加密的时候得记得自己定义的密钥，防止加密后乱码显示使用HEX()将2进制转换成16进制展示 
+   
+```sql
+# 未转换16进制显示乱码或NULL结果
+SELECT AES_ENCRYPT('你好珍珍','ABC123456');
+# 转换为16进制正确显示
+SELECT HEX(AES_ENCRYPT('你好珍珍','ABC123456'));
+```
+
+    AES解密函数
+        需要使用与加密相同的密钥，才能解密出原始密钥
+        语法格式：AES_DECRYPT(加密结果,密钥字符串)
+        UNHEX()表示将16进制转换成2进制
+        
+```sql
+# 解密D4C57EE82EB6EC0C998D882EE1F8EB96,UNHEX()将16进制转成2进制
+SELECT AES_DECRYPT(
+	UNHEX('D4C57EE82EB6EC0C998D882EE1F8EB96'),'ABC123456');
+```
+
+```sql
+# 创建用户表
+CREATE TABLE t_user(
+	id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+	username VARCHAR(20) NOT NULL UNIQUE,
+	password VARCHAR(500) NOT NULL,
+	email VARCHAR(100) NOT NULL,
+	role_id INT UNSIGNED NOT NULL,
+	INDEX(username)
+);
+
+# 用户表插入数据
+INSERT INTO t_user(username,password,email,role_id)
+VALUES('admin',HEX(AES_ENCRYPT('123456','HelloWorld')),'admin@163.com',1),
+('scott',HEX(AES_ENCRYPT('123456','HelloWorld')),'scott@163.com',2);
+```
+
+    MongoDB主键值是固定12个字符长度，所以content_id字段char(12)
+    因为MongoDB未搭建，所以下面创建好新闻表后，暂时不插入数据
+    
+```sql
+# 创建新闻表
+CREATE TABLE t_news(
+	id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+	title VARCHAR(40) NOT NULL,
+	editor_id INT UNSIGNED NOT NULL,
+	type_id INT UNSIGNED NOT NULL,
+	content_id CHAR(12) NOT NULL,
+	is_top TINYINT UNSIGNED NOT NULL,
+	create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	state ENUM('草稿','待审批','已审批','隐藏') NOT NULL,
+	INDEX(editor_id),
+	INDEX(type_id),
+	INDEX(state),
+	# 创建时间加上索引，自动增加排序
+	INDEX(create_time),
+	INDEX(editor_id)
+);
+```
