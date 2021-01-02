@@ -60,7 +60,7 @@ COMMIT;
 |---|------|---|
 |1|read uncommitted|读取未提交数据|
 |2|read committed|读取已提交数据|
-|3|repeatable|重复读取|
+|3|repeatable read|重复读取|
 |4|serializable|序列化|
 
 ### 业务案例1
@@ -146,3 +146,109 @@ COMMIT;
 
     A事务(下单购买) ——> 商品价格350元 <—— (涨价)B事务
 
+    用户支付订单之前，店家给商品涨价了，这样仍然需要按照涨价之前支付订单，因为已经下单未支付
+    这种场景是希望当前事务不受其它事务影响，甚至其它事务提交数据的结果也不要影响到当前这个事务
+    
+    需要使用repeatable重复读取隔离级别，意味着当前事务读取到时事务开始之前的数据，事务开启
+    之后其它事务提交的数据是读取不到的（代表事务在执行中反复读取数据，得到的结果是一致的，不受其它事务影响）
+    
+    注意：是先执行的repeatable read隔离级别中的sql语句，undo日志有数据其它会话提交事务才不会影响当前事务
+    mysql默认的隔离级别就是repeatable read
+
+```sql
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+START TRANSACTION;
+SELECT empno,ename,sal FROM t_emp;
+COMMIT;
+```
+
+```sql
+START TRANSACTION;
+UPDATE demo.t_emp SET sal=1;
+COMMIT;
+```
+
+## 事务的序列化
+    由于事务并发执行所带来的各种问题，前三种隔离级别只适用于在某些业务场景中，
+    但是序列化的隔离性，让事务逐一执行，就不会产生上述问题了。
+    
+    就是前一个事务不提交事务，那么后一个事务就无法执行，牺牲了并发性
+    
+```sql
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+START TRANSACTION;
+SELECT empno,ename,sal FROM t_emp;
+COMMIT;
+```
+    先执行上面sql的第一句开启事务序列化隔离级别
+    再执行下面的sql，但不执行COMMIT语句
+    再执行上面的查询语句，这时是无法查询出结果的，除非执行了下面的COMMIT语句
+    
+```sql
+START TRANSACTION;
+UPDATE demo.t_emp SET sal=1;
+COMMIT;
+```
+    
+## 数据导出与备份的区别
+    数据导出，导出的纯粹是业务数据
+    
+    数据备份，备份的是数据文件、日志文件、索引文件等等
+    备份分为：全量备份和增量备份（只备份变动的数据）
+    
+    1. 数据导出的分类
+    一、是导出sql文档（导出数据不多，建议使用导出为sql文档）
+    二、是导出文本文档（导出数据量多，建议导出为文本文档）
+    
+    2. 导出sql文件
+    mysqldump用来把业务数据导出成sql文件，其中也包括了表结构
+    语法格式：uroot和p表示用户名和密码，只想导出表结构就写上no-data
+            不写no-data表示既包含表结构也有数据
+    mysqldump -uroot -p [no-data] 逻辑库 > 路径
+    
+    3. 导出方法
+    方法一：
+        首先需要配置mysqldump命令的系统环境变量：C:\Program Files\MySQL\MySQL Server 8.0\bin
+        然后cmd命令窗口中输入命令：mysqldump -uroot -p demo > D:/MySQL
+    
+    方法二：
+        图形界面导出
+        右键点击逻辑库——>转储SQL文件——>选择结构和数据或仅结构——>导出到对应目录
+        
+     4. 导入sql文件：同样分为命令行和图形界面两种方式
+        source命令用于导入sql文件，包括创建数据表，写入记录等
+        cmd命令窗口：先登录mysql数据库 mysql -uroot -p 
+        切换到demo的逻辑库：USE demo
+        执行命令：SOURCE D:/MySQL/demo.sql
+        
+        图形界面方式
+        首先备份 
+        右键选择其中某一张表t_emp——>转储sql文件——>仅结构——>保存到某个目录  
+        
+        同样右键选择t_emp——>导出向导——>默认选择txt格式下一步——>选择需要导出的表下一步——开始
+        打开txt文本文档，文档中没有sql语句，只有业务数据，所以导出速度快也要先备份结构，不然拿到
+        其他mysql中无法还原 
+        
+        导入只有文本文档sql
+        demo右键选择运行sql文件——>弹窗选择上面备份的t_emp表结构文件——>刷新后表是空的
+        再次选中t_emp选择导入向导——>弹窗选择文本文档格式下一步——>选择上面的txt文档下一步开始
+        注意设置第一个数据行为1；设置目标字段信息
+        
+## 新闻管理系统 数据库设计
+
+    新闻管理系统控制台程序
+    输入用户名：admin
+    密码：******
+    
+    选择你要执行的操作：
+    1. 新闻列表
+    2. 新建新闻
+    3. 编辑新闻
+    4. 退出
+    
+    新闻属性
+    新闻表：编号、标题、作者、类型、内容、置顶、创建时间、修改时间、状态
+    用户表：编号、用户（由新闻表中作者衍生出这张表，作者字段引用用户表的Id即可）
+    
+    
+    
