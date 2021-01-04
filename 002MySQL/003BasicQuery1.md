@@ -49,7 +49,7 @@ FROM t_emp;
 ## 五、结果集排序
     1、如果没有设置，查询语句不会对结果集进行排序，也就是说如果需要排序，就必须使用ORDER BY子句
     2、ORDER BY 格式（默认升序）
-    SELECT ...... FROM ...... ORDER BY 列名 【ASC/DESC】升序或降序;
+       SELECT ...... FROM ...... ORDER BY 列名 【ASC/DESC】升序或降序;
 
 ```sql
 SELECT empno, ename, sal 
@@ -79,8 +79,8 @@ FROM t_emp ORDER BY sal DESC LIMIT 0, 5;
 ```
 
     5、执行顺序
-    ORDER BY 子句写在 LIMIT子句前面
-    FROM —— SELECT —— ORDER BY —— LIMIT 
+        ORDER BY 子句写在 LIMIT子句前面
+        FROM —— SELECT —— ORDER BY —— LIMIT 
 
 ## 六、结果集中去除重复数据（不是数据表中删除重复记录）
     1、未查询主键字段，则容易出现重复数据如下查询员工表有多少种职业 
@@ -90,19 +90,19 @@ SELECT job FROM t_emp;
 ```
 
     2、去除重复记录只需要在需要去重的字段加上关键字DISTINCT
-    SELECT DISTINCT 字段 FROM ......;
+       SELECT DISTINCT 字段 FROM ......;
 
 ```sql
 SELECT DISTINCT job FROM t_emp;
 ```
 
     3、注意事项
-    使用DISTINCT的SELECT子句只能查询一列数据，如果查询多列，去重则失效
-    DISTINCT关键字只能在SELECT子句中只能使用一次
+        使用DISTINCT的SELECT子句只能查询一列数据，如果查询多列，去重则失效
+        DISTINCT关键字只能在SELECT子句中只能使用一次
 
 ## 七、条件查询
     1、WHERE子句实现筛选数据（普通筛选）
-    格式：SELECT ... FROM ... WHERE 条件 [AND/OR] 条件...;
+       格式：SELECT ... FROM ... WHERE 条件 [AND/OR] 条件...;
     
 ```sql
 SELECT empno,ename,sal
