@@ -30,9 +30,9 @@
 
 ## 六、创建数据表DDL语句
         CREATE TABLE 数据表 (
-        列名1 数据类型 [约束] [COMMENT 注释],
-        列名2 数据类型 [约束] [COMMENT 注释],
-        ......
+            列名1 数据类型 [约束] [COMMENT 注释],
+            列名2 数据类型 [约束] [COMMENT 注释],
+            ......
         )  [COMMENT 注释];
         
 ```sql
