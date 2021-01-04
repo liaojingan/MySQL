@@ -83,7 +83,8 @@ AND DATE_FORMAT(hiredate,'%m')<=6;
         
     6、日期偏移计算函数
         DATE_ADD()可实现日前向前或向后偏移的计算，时间单位灵活
-        语法格式：DATE_ADD(日期, INTERVAL 偏移量 时间单位)——》注意INTERVAL后参数没有逗号分隔的
+        语法格式：DATE_ADD(日期, INTERVAL 偏移量 时间单位)
+        注意INTERVAL后参数没有逗号分隔的
         
 
 ```sql
