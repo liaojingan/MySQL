@@ -7,8 +7,8 @@
        注意：表名后不添加字段声明，mysql就会查询表结构自动补上这个声明，导致不能快速写入
        
        写入多条记录
-       INSERT INTO 表名(字段1，字段2...)
-       VALUES(值1，值2...),(值1，值2...),(值1，值2...);
+        INSERT INTO 表名(字段1，字段2...)
+        VALUES(值1，值2...),(值1，值2...),(值1，值2...);
        
 ```sql
 # 向部门表添加部门记录
@@ -114,11 +114,11 @@ WHERE e.deptno IS NULL OR (d.dname='SALES' AND e.sal<=2000);
 ## 六、DELETE删除语句
 ### 注意：不写WHERE子句是全表删除
     1、DELETE语法
-    DELETE [IGNORE] FROM 表名
-    [WHERE 条件1,条件2,...]
-    [ORDER BY...]
-    [LIMIT...];
-    执行顺序：FROM / WHERE / ORDER BY / LIMIT / DELETE
+        DELETE [IGNORE] FROM 表名
+        [WHERE 条件1,条件2,...]
+        [ORDER BY...]
+        [LIMIT...];
+        执行顺序：FROM / WHERE / ORDER BY / LIMIT / DELETE
     
 ```sql
 # 删除10部门中，工龄超过20年的员工记录
