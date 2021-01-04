@@ -1,4 +1,4 @@
-# 1-MySQL的介绍
+# MySQL的介绍
 
 ## 一、操作系统中数据存放的载体
 1. Windows、Linux和MacOS都是基于文件的操作系统（比如jpg存放的是图片、txt存放      的是文本文件、AVI存放的是视频等）
