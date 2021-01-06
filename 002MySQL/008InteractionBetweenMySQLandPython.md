@@ -227,3 +227,245 @@ finally:
     另外系统中可运行的线程数是有限的，普通电脑最多就运行几千个线程，能分配给数据的线程数据并不是
     很多，所以数据库能支持的网络连接是跟线程数挂钩的，是有限的，所以像大网站一个数据库节点无法维
     持的，就要搞数据库集群
+    
+## 数据库连接池（Connection Pool）
+    数据库连接池预先创建出一些数据库连接，然后缓存起来，避免了程序语言反复创建和销毁连接的昂贵代价
+    连接池创建了不需要关闭
+    
+    数据库连接池语法格式：
+    
+```python
+# coding=utf-8
+
+import mysql.connector.pooling
+
+config = {
+    'port': 3306,
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'Lja199514',
+    'database': 'demo'
+}
+
+pool = mysql.connector.pooling.MySQLConnectionPool(**config, pool_size=10)
+con = pool.get_connection()
+```
+
+    实例：更新部门为20的员工底薪，加200
+    
+```python
+# coding=utf-8
+
+import mysql.connector.pooling
+import mysql.connector.cursor
+
+config = {
+    'port': 3306,
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'Lja199514',
+    'database': 'demo'
+}
+
+try:
+    pool = mysql.connector.pooling.MySQLConnectionPool(**config, pool_size=10)
+    con = pool.get_connection()
+    con.start_transaction()
+    cursor = con.cursor()
+    sql = 'UPDATE t_emp SET sal=sal+%s WHERE deptno=%s'
+    cursor.execute(sql, (200, 20))
+    con.commit()
+except Exception as e:
+    if 'con' in dir():
+        con.rollback()
+    print(e)
+```
+    
+    实例：删除20部门和员工信息
+    
+```python
+# coding=utf-8
+
+import mysql.connector.pooling
+
+
+config = {
+    'host': 'localhost',
+    'port': 3306,
+    'user': 'root',
+    'password': 'Lja199514',
+    'database': 'demo'
+}
+
+try:
+    pool = mysql.connector.pooling.MySQLConnectionPool(**config, pool_size=10)
+    con = pool.get_connection()
+    con.start_transaction()
+    sql = 'DELETE e,d FROM t_emp e JOIN t_dept d ON e.deptno=d.deptno WHERE d.deptno=20'
+    cursor = con.cursor()
+    cursor.execute(sql)
+    con.commit()
+except Exception as e:
+    if 'con' in dir():
+        con.rollback()
+    print(e)
+```
+
+## 循环执行SQL语句
+    游标对象中的executemany()函数可以反复执行一条SQL语句
+    例如一次性插入多条数据或一次性更新多条数据
+    
+```python
+# coding=utf-8
+
+import mysql.connector.pooling
+
+
+config = {
+    'port': 3306,
+    'user': 'root',
+    'host': 'localhost',
+    'database': 'demo',
+    'password': 'Lja199514'
+}
+
+try:
+    pool = mysql.connector.pooling.MySQLConnectionPool(**config, pool_size=10)
+    con = pool.get_connection()
+    cursor = con.cursor()
+    con.start_transaction()
+    sql = 'INSERT INTO t_dept(deptno,dname,loc) VALUES(%s,%s,%s)'
+    data = [
+        [100, 'A部门', '北京'], [101, 'B部门', '上海']
+    ]
+    cursor.executemany(sql, data)
+    con.commit()
+except Exception as e:
+    if 'con' in dir():
+        con.rollback()
+    print(e)
+```
+
+    DML语句可以通过事务管理，DDL语句是无法通过事务管理的 
+    
+## 案例一
+
+    使用INSERT语句，把部门平均底薪超过公司平均底薪的这样部门里的
+    员工信息导入到t_emp_new表里面，并且让这些员工隶属于sales部门
+
+    注意： 创建t_emp_new表，并且拷贝t_emp表的结果集
+    sql = 'CREATE TABLE t_emp_new AS (SELECT * FROM t_emp)'
+    
+```python
+# coding=utf-8
+
+import mysql.connector.pooling
+
+
+config = {
+    'port': 3306,
+    'user': 'root',
+    'password': 'Lja199514',
+    'host': 'localhost',
+    'database': 'demo'
+}
+
+try:
+    pool = mysql.connector.pooling.MySQLConnectionPool(**config, pool_size=10)
+    con = pool.get_connection()
+    cursor = con.cursor()
+    con.start_transaction()
+    # 先删除t_emp_new表，防止该表之前已经被创建
+    drop_sql = 'DROP TABLE t_emp_new'
+    cursor.execute(drop_sql)
+    # 创建t_emp_new表，并且拷贝t_emp表的结果集
+    # sql = 'CREATE TABLE t_emp_new AS (SELECT * FROM t_emp)'
+    # 只抓取t_emp表结果，不需要拷贝数据
+    sql = 'CREATE TABLE t_emp_new LIKE t_emp'
+    cursor.execute(sql)
+
+    # 使用INSERT语句，把部门平均底薪超过公司平均底薪的这样部门里的
+    # 员工信息导入到t_emp_new表里面，并且让这些员工隶属于sales部门
+    avg_sql = 'SELECT AVG(sal) AS avg FROM t_emp'
+    cursor.execute(avg_sql)
+    # 上面sql只是返回一条结果集数据所以使用fetchone()取出游标中数据
+    temp = cursor.fetchone()
+    # avg公司平均底薪
+    avg = temp[0]
+
+    # 部门平均底薪超过公司平均底薪
+    dept_avg_sql = 'SELECT deptno FROM t_emp GROUP BY deptno HAVING AVG(sal)>=%s'
+    cursor.execute(dept_avg_sql, [avg])
+    # fetchall()取出游标中所有数据
+    temp1 = cursor.fetchall()
+
+    # 拼接sql语句：INSERT INTO t_emp_new SELECT * FROM t_emp WHERE deptno IN (20,10)
+    sql1 = 'INSERT INTO t_emp_new SELECT * FROM t_emp WHERE deptno IN ('
+    for index in range(len(temp1)):
+        one = temp1[index][0]
+        if index < len(temp1)-1:
+            sql1 += str(one)+','
+        else:
+            sql1 += str(one)
+    sql1 += ')'
+    cursor.execute(sql1)
+
+    sql2 = 'DELETE FROM t_emp WHERE deptno IN('
+    for index in range(len(temp1)):
+        one = temp1[index][0]
+        if index < len(temp1)-1:
+            sql2 += str(one)+','
+        else:
+            sql2 += str(one)
+    sql2 += ')'
+    cursor.execute(sql2)
+
+    sql3 = 'SELECT deptno FROM t_dept WHERE dname=%s'
+    cursor.execute(sql3, ['SALES'])
+    deptno = cursor.fetchone()[0]
+    sql4 = 'UPDATE t_emp_new SET deptno=%s'
+    cursor.execute(sql4, [deptno])
+
+    con.commit()
+except Exception as e:
+    if 'con' in dir():
+        con.rollback()
+    print(e)
+```
+    MySQL和Python交互时，书写的SQL语句要化整为零，不需要写复杂的语句
+    
+    
+## 案例二
+    
+    编写一个INSERT语句向部门插入两条记录，每条记录都在部门原有最大主键值的基础上+10
+    
+```python
+# coding=utf-8
+
+import mysql.connector.pooling
+
+
+config = {
+    'port': 3306,
+    'user': 'root',
+    'host': 'localhost',
+    'database': 'demo',
+    'password': 'Lja199514'
+}
+
+try:
+    pool = mysql.connector.pooling.MySQLConnectionPool(**config, pool_size=10)
+    con = pool.get_connection()
+    cursor = con.cursor()
+    con.start_transaction()
+    # sql不可写成一边查询一边插入数据，下面MAX(deptno)+20不是+10，是因为没有提交事务前，主键最大的都是不变的
+    sql = 'INSERT INTO t_dept (SELECT MAX(deptno)+10,%s,%s FROM t_dept UNION SELECT MAX(deptno)+20,%s,%s FROM t_dept)'
+    cursor.execute(sql, ('A部门', '北京', 'B部门', '上海'))
+    con.commit()
+except Exception as e:
+    if 'con' in dir():
+        con.rollback()
+    print(e)
+``` 
+
+ 
