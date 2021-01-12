@@ -80,7 +80,7 @@ print(list(project.keys()))
 ```
 
 
-##五、字典的values函数
+## 五、字典的values函数
     1、获取当前字典中所有键值对中的值（value）
     2、用法：dict.values()；无需传参，返回一个value集合的伪列表
     
