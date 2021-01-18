@@ -44,7 +44,7 @@
 </body>
 </html>
 ```
-![关系选择器](../picture/selector.png)
+![关系选择器](img/selector.png)
 
     2、属性选择器
     
@@ -128,4 +128,4 @@
 </body>
 </html>
 ```
-![属性选择器](../picture/selector01.png)
+![属性选择器](img/selector01.png)
