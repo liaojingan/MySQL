@@ -69,6 +69,16 @@
         https://registry.npm.taobao.org
         http://r.cnpmjs.org/
         
+    9、安装cnpm
+        npm install -g cnpm --registry=https://registry.npm.taobao.org
+        
+    10、安装vue（参考链接：https://blog.51cto.com/13363488/2287698）
+        cmd命令窗口进入E:\nodejs\node_global目录下输入命令：.\cnpm install vue -g 安装vue
+        
+    11、安装vue命令行工具
+        cmd命令窗口进入E:\nodejs\node_global目录下输入命令：.\cnpm install vue-cli -g
+        
+        
     VSCode环境搭建
         参考链接：https://www.cnblogs.com/xuhuale/p/10167159.html
         或者直接安装Run code插件，然后右键选择run code执行文件即可
