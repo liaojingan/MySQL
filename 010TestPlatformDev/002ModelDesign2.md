@@ -459,12 +459,8 @@ class TestM2MQuery(TestCase):
     实例
 
 ```python
-from django.test import TestCase
-from .models import Module,Project,Environment,Plan,Step,Case,HttpApi,Tag,Result
-from django.contrib.auth.models import User
-
-# Create your tests here.
-class TestM2MQuery(TestCase):
+# 字段条件查询
+class TestFieldQuery(TestCase):
     def setUp(self) -> None:
         # 用户
         self.user = User.objects.create_user(username='admin',password='123456',first_name='管理员')
@@ -487,54 +483,71 @@ class TestM2MQuery(TestCase):
         # 报告
         self.test_report = Result.objects.create(plan=self.test_plan,created_by=self.user)
 
-    #用例步骤关系
-    def test_case_step(self):
-        #查询某用例下面的步骤
-        steps = self.test_case.step_set.filter()
-        Step.objects.create(desc='step2',case=self.test_case,created_by=self.user)
+
+    def test_iexact_query(self):
+        steps = Step.objects.filter(desc__iexact='Test_Step')
         print(steps)
 
-    #用例 标签
-    def test_case_tag(self):
-        # 关联标签
-        self.test_case.tags.add(self.test_tag)
-        # 用例下面的标签--正向查询
-        tags=self.test_case.tags.all()
+    def test_contains_query(self):
+        tags = Tag.objects.filter(name__contains='冒烟')
         print(tags)
-        # 标签关联的用例？--反向查询
-        cases=self.test_tag.case_set.all()
-        print(cases)
-
-    def test_user_pro(self):
-        # 查询项目管理员--正向查询
-        user1=self.test_pro.admin
-        print(user1)
-        # 反向查询--当前用户管理的项目--用relatedname查询
-        Project.objects.create(name='松勤测试平台123',created_by=self.user,admin=self.user)
-        pros=self.user.admin.all()
-        print(pros)
-
-        # 反向查询2--当前用户参与了哪些项目
-        pro1=Project.objects.create(name='testpro1')
-        pro2=Project.objects.create(name='testpro2')
-        pro3=Project.objects.create(name='testpro3')
-        #项目关联成员
-        pro1.members.add(self.user)
-        pro2.members.add(self.user)
-        pro3.members.add(self.user)
-        # ---正向查询
-        pro1.members.all()
-        # 当前用户参与了哪些项目
-        pros=self.user.members.all()
-        print(pros)
-
-        # 查询当前用户创建的项目
-        pros2=self.user.project_created_by.all()
-        print(pros2)
 ```
 
+### 跨关系查询
 
-
+    Django提供了强大并且直观的方式解决跨越关联的查询，它在后台自动执行包含JOIN的SQL语句。要跨
+    越某个关联，只需使用关联的模型字段名称，并使用双下划线分隔，直至你想要的字段（可以链式跨越，无限跨度）
     
+    例如：#查找标签是xxx的用例
+        * 注意：双划线关联的是字段名称
+        * 技巧：查什么就用对应数据模型，下面查用例，就使用用例数据模型Case.objects
+        * res1=Case.objects.filter(tags__name='smoketest')
+        
+    示例如下
+
+```python
+#跨关系查询
+class TestOverRelations(TestCase):
+    def setUp(self) -> None:
+        # 用户
+        self.user = User.objects.create_user(username='admin',password='123456',first_name='管理员')
+        # 项目
+        self.test_pro=Project.objects.create(name='松勤测试平台',created_by=self.user,admin=self.user)
+        # 模块
+        self.test_mod = Module.objects.create(name='第三方支付-微信',project=self.test_pro,created_by=self.user)
+        # 用例
+        self.test_case = Case.objects.create(desc='支付接口用例001',module=self.test_mod,created_by=self.user)
+        # 步骤
+        self.test_step=Step.objects.create(desc='test_step',case=self.test_case,created_by=self.user)
+        # 接口
+        self.test_api=HttpApi.objects.create(desc='合同新增接口',module=self.test_mod,created_by=self.user)
+        # 标签
+        self.test_tag = Tag.objects.create(name='冒烟测试',created_by=self.user)
+        # 环境
+        self.test_env = Environment.objects.create(desc='阿里云',project=self.test_pro,created_by=self.user)
+        # 计划
+        self.test_plan = Plan.objects.create(name='生辰纲',environment=self.test_env,created_by=self.user)
+        # 报告
+        self.test_report = Result.objects.create(plan=self.test_plan,created_by=self.user)
+
+
+    def test_tags(self):
+        # 通过标签名查找测试用例
+        # 小技巧1，查什么就用对应数据的模型
+        self.test_case.tags.add(self.test_tag)  #关联标签
+        cases = Case.objects.filter(tags__name='冒烟测试')
+        print('通过标签名查找测试用例')
+        print(cases)
+
+    def test_case_project(self):
+        # 查找测试用例对应的项目 1.正向查抄
+        print('查找测试用例对应的项目 1.正向查抄')
+        project = self.test_case.module.project
+        print(project)
+
+        # 跨关系--通过测试用例的名称 外键模型__字段
+        project2 =  Project.objects.filter(module__case__desc='支付接口用例001')[0]
+        print(project2)
+``` 
     
     
