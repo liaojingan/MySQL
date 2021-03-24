@@ -246,13 +246,13 @@ from django.contrib.auth.models import User
 class CommonInfo(models.Model):
     # 创建
     create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
-    created_by = models.ForeignKey(User, null=True, version_name='创建者', on_delete=models.SET_NULL, related_name='created_by')
+    created_by = models.ForeignKey(User, null=True, verbose_name='创建者', on_delete=models.SET_NULL, related_name='%(class)s_created_by')
     # 更新，设置更新时间null=True允许为空，因为第一次创建时候是没有更新时间的
     update_time = models.DateTimeField(auto_now=True, verbose_name='更新时间', null=True)
-    updated_by = models.ForeignKey(User, null=True, version_name='更新者', on_delete=models.SET_NULL, related_name='updated_by')
+    updated_by = models.ForeignKey(User, null=True, verbose_name='更新者', on_delete=models.SET_NULL, related_name='%(class)s_updated_by')
     # 描述
     desc = models.TextField(null=True, blank=True, verbose_name='描述')
-    # 排序（可选择此字段进行排序）
+    # 排序（可选择此字段进行排序）s
     sorted_by = models.IntegerField(default=1, verbose_name='排序', editable=True)
     # 删除（默认不删除）
     is_delete = models.BooleanField(default=False, verbose_name='删除')
@@ -262,7 +262,7 @@ class CommonInfo(models.Model):
         # 检查当前对象有无name属性，有则返回，无则返回描述desc字段信息
         if hasattr(self, 'name'):
             return self.name
-        return  self.desc
+        return self.desc
 
     class Meta:
         abstract = True
@@ -280,7 +280,7 @@ class Project(CommonInfo):
     )
 
     # 管理员
-    admin = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='项目管理员', related_name='admin')
+    admin = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, verbose_name='项目管理员', related_name='admin')
     # 成员
     members = models.ManyToManyField(User, verbose_name='项目成员', related_name='members')
     # 名称
@@ -333,6 +333,6 @@ class Environment(CommonInfo):
     # 状态
     status = models.SmallIntegerField(default=0, choices=service_status, verbose_name='服务器状态')
 
-    class Meta(CommonInfo):
+    class Meta(CommonInfo.Meta):
         verbose_name = '测试环境表'
 ```
