@@ -401,6 +401,8 @@ if __name__ == '__main__':
 {'retcode': 200, 'msg': '删除成功'}
 """
 ```
+
+![test](img/test24.png)
     
        
     
