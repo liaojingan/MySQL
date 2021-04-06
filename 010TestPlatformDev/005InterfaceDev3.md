@@ -1201,7 +1201,7 @@ def handler_add(request, position_keys, option_keys, ModelHandler):
         return JsonResponse({'retcode': 500, 'msg': '添加失败', 'error': repr(e)})
 ```
 
-    2、ProjectHandler类中的add函数优化如下
+    2、mgr.py文件下ProjectHandler类中的add函数优化如下
     
 ```python
 class ProjectHandler:
