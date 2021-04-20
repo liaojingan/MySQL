@@ -237,6 +237,7 @@ from .account import current_user
     3、sqtp——>urls.py新增路由
     
 ```python
+from .views import current_user
 # 检查当前用户
 path('user/current/', current_user),
 ```
