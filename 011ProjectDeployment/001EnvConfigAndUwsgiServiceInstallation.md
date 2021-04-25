@@ -577,7 +577,7 @@ systemctl restart network 或 service network restart
         * 添加：firewall-cmd --zone=public --add-port=8000/tcp --permanent （--permanent永久生效，没有此参数重启后失效）
         * 重新载入：firewall-cmd --reload
         * 查看：firewall-cmd --zone=public --list-ports
-        * 删除：firewall-cmd --zone= public --remove-port=80/tcp --permanent
+        * 删除：firewall-cmd --zone=public --remove-port=80/tcp --permanent
         
         
     注意：后台无论用什么语言实现（python、java等）只要暴露端口，因为现在的程序不是通过程序API直接调用
